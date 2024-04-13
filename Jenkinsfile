@@ -1,10 +1,41 @@
-pipeline {
-    agent { docker { image 'python:3.12.1-alpine3.19' } }
-    stages {
-        stage('build') {
-            steps {
-                sh 'python --version'
-            }
+pipeline { 
+        environment { 
+                registry = "harunisiaho/getip" 
+                registryCredential = 'dockerhub_id'
+                dockerImage = '' 
         }
-    }
+
+        agent any 
+
+        stages { 
+                stage('Cloning our Git') { 
+                        steps { 
+                                git branch: 'main', url: 'https://github.com/harunisiaho/getip.git' 
+                        }
+                } 
+
+                stage('Building our image') { 
+                        steps { 
+                                script { 
+                                        dockerImage = docker.build registry + ":$BUILD_NUMBER" 
+                                }
+                        } 
+                }
+
+                stage('Deploy our image') { 
+                        steps { 
+                                script { 
+                                        docker.withRegistry( '', registryCredential ) { 
+                                                dockerImage.push() 
+                                        }
+                                } 
+                        }
+                } 
+
+                stage('Cleaning up') { 
+                        steps { 
+                                sh "docker rmi $registry:$BUILD_NUMBER" 
+                        }
+                } 
+        }
 }
