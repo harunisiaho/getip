@@ -5,7 +5,9 @@ pipeline {
                 dockerImage = '' 
         }
 
-        agent any 
+        agent kubernetes {
+            yaml 'kaniko-pod.yaml'
+        } 
 
         stages { 
                 stage('Cloning our Git') { 
